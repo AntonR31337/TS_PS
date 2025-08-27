@@ -1,148 +1,181 @@
-import {useEffect, useState} from "react";
-import {Card, Col, Modal, Row, Statistic, Typography} from "antd";
-import "./styles.css";
-import Metronome from "../../components/metronome";
-import StatisticPage from "../../components/statistic";
-import {useNavigate} from "react-router-dom";
-import {textStore} from "../../store/text-store";
-import {observer} from "mobx-react-lite";
-import {observable} from "mobx";
+import { useEffect, useState } from 'react'
+import { Button, Card, Col, Modal, Row, Statistic, Typography } from 'antd'
+import './styles.css'
+import Metronome from '../../components/metronome'
+import StatisticPage from '../../components/statistic'
+import { useNavigate } from 'react-router-dom'
+import { textStore } from '../../store/text-store'
+import { observer } from 'mobx-react-lite'
+import { observable } from 'mobx'
+import { useLocalStorage } from '../../hooks'
 
-const { Countdown } = Statistic;
+const { Countdown } = Statistic
 
 const KeyboardTrainer = observer(() => {
-  const navigate = useNavigate();
+	const navigate = useNavigate()
 
-  const {
-    rightText,
-    leftText,
-    loading,
-    setRightText,
-    setLeftText,
-    resetRightText,
-    resetLeftText,
-  } = textStore;
+	const [value, setValue] = useLocalStorage([], 'results')
 
-  const [isFinish, setIsFinish] = useState<boolean>(false);
-  const [deadline, setDeadline] = useState<number>(0);
-  const [isOpenModal, setIsOpenModal] = useState<boolean>(false);
-  const [mistakesCount, setMistakesCount] = useState<number>(0);
+	const { rightText, leftText, loading, setRightText, setLeftText, resetRightText, resetLeftText } = textStore
 
-  useEffect(() => {
-    resetLeftText();
-    resetRightText();
+	const [isFinish, setIsFinish] = useState<boolean>(false)
+	const [isVisibleText, setIsVisibleText] = useState<boolean>(false)
+	const [deadline, setDeadline] = useState<number>(0)
+	const [isOpenModal, setIsOpenModal] = useState<boolean>(false)
+	const [mistakesCount, setMistakesCount] = useState<number>(0)
 
-    let ignore = false
-    if (!ignore ) {
-      textStore.getNewText();
-    }
+	useEffect(() => {
+		resetLeftText()
+		resetRightText()
 
-    return () => {
-      ignore = true;
-    }
-  }, []);
+		let ignore = false
+		if (!ignore) {
+			textStore.getNewText()
+		}
 
-  const checkDeadline = () => {
-    if (!isFinish && deadline < Date.now()) {
-      setDeadline(Date.now() + 60 * 1000 * 1);
-    }
-  };
+		return () => {
+			ignore = true
+		}
+	}, [resetLeftText, resetRightText])
 
-  const handleKeyPress = (event: KeyboardEvent) => {
-    const letter = event.key;
+	const checkDeadline = () => {
+		if (!isFinish && deadline < Date.now()) {
+			setDeadline(Date.now() + 60 * 1000 * 1)
+		}
+	}
 
-    if (letter === 'Shift') {
-      return
-    }
+	const setResultData = () => {
+		setValue([
+			...value,
+			{
+				date: Date.now(),
+				length: leftText.length,
+				mistakesCount: mistakesCount,
+				seqN: value.length + 1,
+			},
+		])
+	}
 
-    if (rightText.length === 30 && !loading) {
-      textStore.getNewText();
-    }
+	const handleKeyPress = (event: KeyboardEvent) => {
+		const letter = event.key
 
-    if (letter !== rightText[0]) {
-       setMistakesCount(mistakesCount + 1);
-    }
+		if (letter === 'Shift') {
+			return
+		}
 
-    if (rightText.length > 0 && letter === rightText[0]) {
-      checkDeadline();
+		if (!isVisibleText) {
+			setIsVisibleText(true)
+		}
 
-      setLeftText(leftText.concat(letter));
-      setRightText(rightText.slice(1));
-    }
-  };
+		if (rightText.length === 30 && !loading) {
+			textStore.getNewText()
+		}
 
-  const startGame = () => {
-    setIsFinish(false);
-    setIsOpenModal(false);
-    resetLeftText();
-    resetRightText();
-    setMistakesCount(0);
-    textStore.getNewText();
-  };
+		if (letter !== rightText[0]) {
+			setMistakesCount(mistakesCount + 1)
+		}
 
-  const onFinish = () => {
-    setIsFinish(true);
-    setIsOpenModal(true);
-  };
+		if (rightText.length > 0 && letter === rightText[0]) {
+			checkDeadline()
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isFinish) {
-        handleKeyPress(event);
-      }
-    };
+			setLeftText(leftText.concat(letter))
+			setRightText(rightText.slice(1))
+		}
+	}
 
-    window.addEventListener("keydown", handleKeyDown);
+	const startGame = () => {
+		setIsFinish(false)
+		setIsOpenModal(false)
+		resetLeftText()
+		resetRightText()
+		setMistakesCount(0)
+		textStore.getNewText()
+	}
 
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  });
+	useEffect(() => {
+		if (isFinish) {
+			setIsOpenModal(true)
+			setResultData()
+		}
+	}, [isFinish])
 
-  return (
-    <>
-      <Row gutter={[16, 16]}>
-        <Col span={24}>
-          <Countdown
-            value={deadline}
-            onFinish={onFinish}
-            style={{ textAlign: "center" }}
-          />
-          <Metronome />
-        </Col>
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (!isFinish) {
+			handleKeyPress(event)
+		}
+	}
 
-        <Col span={24}>
-          <Card bordered={true}>
-            <div className='wrapper'>
-              <div className='left'>{leftText}</div>
-              <div className='right'>{rightText}</div>
-            </div>
-          </Card>
-        </Col>
-      </Row>
+	useEffect(() => {
+		window.addEventListener('keydown', handleKeyDown)
 
-      {!deadline && (
-          <Row gutter={[16, 16]}>
-            <Typography.Title type={'warning'} style={{margin: '10px auto'}} >
-              Для старта начните печатать предложенный текст
-            </Typography.Title>
-          </Row>
-      )}
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+		}
+	}, [handleKeyDown, mistakesCount])
 
+	return (
+		<>
+			<Row gutter={[16, 16]}>
+				<Col span={24}>
+					<Countdown
+						value={deadline}
+						onFinish={() => {
+							setIsFinish(true)
+						}}
+						style={{ textAlign: 'center' }}
+					/>
+					<Metronome />
+					<Button
+						onClick={() => {
+							debugger
+							setResultData()
+						}}
+					>
+						Check!
+					</Button>
+				</Col>
 
-      <Modal
-        open={isOpenModal}
-        centered
-        cancelText={"Еще раз"}
-        okText={"Завершить"}
-        closeIcon={null}
-        onOk={() => navigate("/")}
-        onCancel={startGame}
-      >
-        <StatisticPage length={leftText.length}  mistakes={mistakesCount}/>
-      </Modal>
-    </>
-  );
-});
+				<Col span={24}>
+					<Card bordered={true}>
+						<div className="wrapper">
+							{!isVisibleText ? (
+								<Row gutter={[16, 16]}>
+									<Typography.Title type={'warning'} style={{ margin: '10px auto' }}>
+										Для старта нажмите пробел
+									</Typography.Title>
+								</Row>
+							) : (
+								<>
+									<div className="left">{leftText}</div>
+									<div className="right">{rightText}</div>
+								</>
+							)}
+						</div>
+					</Card>
+				</Col>
+			</Row>
 
-export default observable(KeyboardTrainer);
+			{/*{!deadline && (*/}
+			{/*    <Row gutter={[16, 16]}>*/}
+			{/*      <Typography.Title type={'warning'} style={{margin: '10px auto'}} >*/}
+			{/*        Для старта начните печатать предложенный текст*/}
+			{/*      </Typography.Title>*/}
+			{/*    </Row>*/}
+			{/*)}*/}
+
+			<Modal
+				open={isOpenModal}
+				centered
+				cancelText={'Еще раз'}
+				okText={'Завершить'}
+				closeIcon={null}
+				onOk={() => navigate('/')}
+				onCancel={startGame}
+			>
+				<StatisticPage length={leftText.length} mistakes={mistakesCount} />
+			</Modal>
+		</>
+	)
+})
+
+export default observable(KeyboardTrainer)
