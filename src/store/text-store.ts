@@ -1,56 +1,52 @@
-import {makeAutoObservable, runInAction} from "mobx";
+import { makeAutoObservable, runInAction } from 'mobx'
 
-const URL = "https://fish-text.ru/get?";
+const URL = 'https://fish-text.ru/get?'
 
 interface IText {
-  status: "success";
-  text: string;
+	status: 'success'
+	text: string
 }
 
 class TextStore {
-  loading: boolean = false;
-  rightText: string = "";
-  leftText: string = "";
+	loading: boolean = false
+	rightText: string = ''
+	leftText: string = ''
 
-  constructor() {
-    makeAutoObservable(this);
-  }
+	constructor() {
+		makeAutoObservable(this)
+	}
 
-  getNewText = async (): Promise<void> => {
+	getNewText = async (): Promise<void> => {
+		try {
+			this.loading = true
 
-      try {
-        this.loading = true;
+			const { text }: IText = await fetch(URL + '&type=sentence&number=1').then((res) => res.json())
 
-        const {text}: IText = await fetch(URL + "&type=sentence&number=1")
-            .then(res => res.json())
+			runInAction(() => {
+				this.rightText += !!this.rightText.length ? ' ' + text : text
+				this.loading = false
+			})
+		} catch (error) {
+			this.loading = false
+			throw error
+		}
+	}
 
-        runInAction(() => {
+	setRightText = (value: string) => {
+		this.rightText = value
+	}
 
-          this.rightText += !!this.rightText.length ? " " + text : text
-          this.loading = false;
-        });
-      } catch (error) {
+	setLeftText = (value: string) => {
+		this.leftText = value
+	}
 
-        this.loading = false;
-        throw error;
-      }
-  };
+	resetRightText = () => {
+		this.rightText = ''
+	}
 
-  setRightText = (value: string) => {
-    this.rightText = value;
-  };
-
-  setLeftText = (value: string) => {
-    this.leftText = value;
-  };
-
-  resetRightText = () => {
-    this.rightText = "";
-  };
-
-  resetLeftText = () => {
-    this.leftText = "";
-  };
+	resetLeftText = () => {
+		this.leftText = ''
+	}
 }
 
-export const textStore = new TextStore();
+export const textStore = new TextStore()
