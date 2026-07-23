@@ -4,9 +4,10 @@ import type { TableProps } from 'antd'
 
 interface DataType {
 	key: string
-	name: string
+	seqN: number
 	date: number
-	address: string
+	length: number
+	mistakesCount: number
 }
 
 const columns: TableProps<DataType>['columns'] = [

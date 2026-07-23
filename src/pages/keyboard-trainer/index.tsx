@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Button, Card, Col, Modal, Row, Statistic, Typography } from 'antd'
 import './styles.css'
 import Metronome from '../../components/metronome'
@@ -6,7 +6,7 @@ import StatisticPage from '../../components/statistic'
 import { useNavigate } from 'react-router-dom'
 import { textStore } from '../../store/text-store'
 import { observer } from 'mobx-react-lite'
-import { observable } from 'mobx'
+
 import { useLocalStorage } from '../../hooks'
 
 const { Countdown } = Statistic
@@ -23,6 +23,10 @@ const KeyboardTrainer = observer(() => {
 	const [deadline, setDeadline] = useState<number>(0)
 	const [isOpenModal, setIsOpenModal] = useState<boolean>(false)
 	const [mistakesCount, setMistakesCount] = useState<number>(0)
+
+	useEffect(() => {
+		console.log(mistakesCount)
+	}, [mistakesCount])
 
 	useEffect(() => {
 		resetLeftText()
@@ -56,32 +60,35 @@ const KeyboardTrainer = observer(() => {
 		])
 	}
 
-	const handleKeyPress = (event: KeyboardEvent) => {
-		const letter = event.key
+	const handleKeyPress = useCallback(
+		(event: KeyboardEvent) => {
+			const letter = event.key
 
-		if (letter === 'Shift') {
-			return
-		}
+			if (letter === 'Shift') {
+				return
+			}
 
-		if (!isVisibleText) {
-			setIsVisibleText(true)
-		}
+			if (!isVisibleText) {
+				setIsVisibleText(true)
+			}
 
-		if (rightText.length === 30 && !loading) {
-			textStore.getNewText()
-		}
+			if (rightText.length === 30 && !loading) {
+				textStore.getNewText()
+			}
 
-		if (letter !== rightText[0]) {
-			setMistakesCount(mistakesCount + 1)
-		}
+			if (letter !== rightText[0]) {
+				deadline && setMistakesCount((prev) => prev + 1)
+			}
 
-		if (rightText.length > 0 && letter === rightText[0]) {
-			checkDeadline()
+			if (rightText.length > 0 && letter === rightText[0]) {
+				checkDeadline()
 
-			setLeftText(leftText.concat(letter))
-			setRightText(rightText.slice(1))
-		}
-	}
+				setLeftText(leftText.concat(letter))
+				setRightText(rightText.slice(1))
+			}
+		},
+		[isVisibleText, rightText, loading, leftText],
+	)
 
 	const startGame = () => {
 		setIsFinish(false)
@@ -99,11 +106,14 @@ const KeyboardTrainer = observer(() => {
 		}
 	}, [isFinish])
 
-	const handleKeyDown = (event: KeyboardEvent) => {
-		if (!isFinish) {
-			handleKeyPress(event)
-		}
-	}
+	const handleKeyDown = useCallback(
+		(event: KeyboardEvent) => {
+			if (!isFinish) {
+				handleKeyPress(event)
+			}
+		},
+		[isFinish, handleKeyPress],
+	)
 
 	useEffect(() => {
 		window.addEventListener('keydown', handleKeyDown)
@@ -111,7 +121,7 @@ const KeyboardTrainer = observer(() => {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [handleKeyDown, mistakesCount])
+	}, [handleKeyDown])
 
 	return (
 		<>
@@ -127,7 +137,6 @@ const KeyboardTrainer = observer(() => {
 					<Metronome />
 					<Button
 						onClick={() => {
-							debugger
 							setResultData()
 						}}
 					>
@@ -178,4 +187,4 @@ const KeyboardTrainer = observer(() => {
 	)
 })
 
-export default observable(KeyboardTrainer)
+export default KeyboardTrainer
