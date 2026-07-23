@@ -28,6 +28,10 @@ import { Button, Form, Input } from 'antd'
 import { fetchUserData, UserDataType } from '../tests/test'
 
 const Counter = () => {
+	for (let i = 0; i <= 100; i++) {
+		console.log(i)
+	}
+
 	// Object.name - просто показывает имя функции или класса
 	// Object.call() - вызывается сразу, аргументы после первого перечисляются последовательно
 	// Object.apply() - вызывается сразу, аргументы после первого перечисляются в едином массиве
@@ -115,8 +119,6 @@ const Counter = () => {
 	}
 
 	const user = changeBalance(getName({ name: 'Anton' }))
-
-	console.log(user)
 
 	function decorateTableWithUrlState(): (params?: any) => any {
 		return function useInitialState(params?: any): any {

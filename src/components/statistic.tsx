@@ -27,7 +27,7 @@ const StatisticPage: React.FC<IResults> = ({ length, mistakes }: IResults) => {
 					<Card bordered={false}>
 						<Statistic
 							title="Ошибок"
-							value={(mistakes / length) * 100}
+							value={length > 0 ? (mistakes / length) * 100 : 0}
 							precision={1}
 							valueStyle={{ color: '#cf1322' }}
 							prefix={<ArrowDownOutlined />}

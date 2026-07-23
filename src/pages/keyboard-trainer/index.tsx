@@ -6,7 +6,7 @@ import StatisticPage from '../../components/statistic'
 import { useNavigate } from 'react-router-dom'
 import { textStore } from '../../store/text-store'
 import { observer } from 'mobx-react-lite'
-import { observable } from 'mobx'
+
 import { useLocalStorage } from '../../hooks'
 
 const { Countdown } = Statistic
@@ -137,7 +137,6 @@ const KeyboardTrainer = observer(() => {
 					<Metronome />
 					<Button
 						onClick={() => {
-							debugger
 							setResultData()
 						}}
 					>
@@ -188,4 +187,4 @@ const KeyboardTrainer = observer(() => {
 	)
 })
 
-export default observable(KeyboardTrainer)
+export default KeyboardTrainer
